@@ -2,7 +2,7 @@
 <html lang="zh-CN"><head><meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
 <title>国家队ETF动向追踪</title>
-<script src="https://cdn.jsdelivr.net/npm/echarts@5.5.1/dist/echarts.min.js"></script>
+<script src="./assets/echarts-5.5.1.min.js"></script>
 <style>
 :root{--bg:#f2f4f8;--card:#fff;--line:#eceff4;--text:#1d2333;--mute:#8a93a6;--up:#e0443e;--down:#2fa36b;--blue:#3b6fe0;--orange:#e8a317;
 --sh:0 1px 2px rgba(20,30,60,.04),0 6px 20px rgba(20,30,60,.05)}
@@ -100,7 +100,7 @@ function drawEtf(code){const i=DATA.etfs[code];if(!i)return;
  areaStyle:{color:'rgba(59,111,224,.06)'}}]},true);}
 function sel(){const l=(DATA.watchlist||[]).filter(w=>DATA.etfs&&DATA.etfs[w.code]),e=$('etfSel');
  e.innerHTML=l.map(w=>`<option value="${w.code}">${w.code} ${w.name}</option>`).join('');
- e.onchange=()=>drawEtf(e.value);if(l.length)drawEtf(l[0].code);}
+ e.onchange=()=>{if(typeof echarts!=='undefined')drawEtf(e.value)};}
 let sk='est_flow_1d',asc=false;
 function table(){const r=[...(DATA.snapshot||[])].sort((a,b)=>{const x=a[sk],y=b[sk];
  if(x==null)return 1;if(y==null)return -1;return typeof x==='string'?(asc?x.localeCompare(y):y.localeCompare(x)):(asc?x-y:y-x)});
@@ -110,6 +110,18 @@ function table(){const r=[...(DATA.snapshot||[])].sort((a,b)=>{const x=a[sk],y=b
  <td class="${cls(r.est_flow_5d)}">${signed(r.est_flow_5d)}</td><td class="${cls(r.est_flow_20d)}">${signed(r.est_flow_20d)}</td><td>${fmt(r.close,3)}</td></tr>`).join('');}
 document.querySelectorAll('#snapTable th').forEach(t=>t.onclick=()=>{const k=t.dataset.k;
  if(sk===k)asc=!asc;else{sk=k;asc=['code','name','index'].includes(k)}table()});
-cards();daily();sel();table();
+cards();sel();table();
+function chartError(message){
+ ['chartDaily','chartEtf'].forEach(id=>{
+  const el=$(id);el.textContent=message;
+  el.style.cssText='display:flex;align-items:center;justify-content:center;min-height:160px;padding:20px;box-sizing:border-box;color:#8a93a6;text-align:center';
+ });
+}
+if(typeof echarts==='undefined'){
+ chartError('图表资源加载失败，请检查网络后刷新页面。下方数据表仍可查看。');
+}else{
+ try{daily();if($('etfSel').value)drawEtf($('etfSel').value);}
+ catch(error){console.error('图表初始化失败',error);chartError('图表暂时无法显示，请刷新页面重试。下方数据表仍可查看。');}
+}
 addEventListener('resize',()=>ec&&ec.resize());
 </script></body></html>
